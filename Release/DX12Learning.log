@@ -1,0 +1,54 @@
+﻿  main.cpp
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(30,40): error C2061: 構文エラー: 識別子 'HIMSTANCE'
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(32,25): error C3646: 'DebugOutputFormatString': 不明なオーバーライド指定子です
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(30,12): error C2731: 'WinMain': 関数はオーバーロードできません。
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(30): message : 'WinMain' の宣言を確認してください
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(32,25): error C2059: 構文エラー: '('
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(33,11): error C4430: 型指定子がありません - int と仮定しました。メモ: C++ は int を既定値としてサポートしていません
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(36,3): error C3927: '->': 後続の戻り値の型は、関数以外の宣言子の後に許可されていません
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(36,3): error C3484: 構文エラー: 戻り値の型の前に '->' が必要です
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(36,11): error C3613: '->' の後に戻り型が指定されていません ('int' と見なされます)
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(36,11): error C4430: 型指定子がありません - int と仮定しました。メモ: C++ は int を既定値としてサポートしていません
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(36,2): error C2371: 'w': 再定義されています。異なる基本型です。
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(35): message : 'w' の宣言を確認してください
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(36,4): error C2146: 構文エラー: ';' が、識別子 'cbSize' の前に必要です。
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(37,3): error C3927: '->': 後続の戻り値の型は、関数以外の宣言子の後に許可されていません
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(37,3): error C3484: 構文エラー: 戻り値の型の前に '->' が必要です
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(37,16): error C3613: '->' の後に戻り型が指定されていません ('int' と見なされます)
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(37,16): error C4430: 型指定子がありません - int と仮定しました。メモ: C++ は int を既定値としてサポートしていません
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(37,2): error C2371: 'w': 再定義されています。異なる基本型です。
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(35): message : 'w' の宣言を確認してください
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(37,4): error C2146: 構文エラー: ';' が、識別子 'lpfnWndProc' の前に必要です。
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(38,3): error C3927: '->': 後続の戻り値の型は、関数以外の宣言子の後に許可されていません
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(38,3): error C3484: 構文エラー: 戻り値の型の前に '->' が必要です
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(38,18): error C3613: '->' の後に戻り型が指定されていません ('int' と見なされます)
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(38,18): error C4430: 型指定子がありません - int と仮定しました。メモ: C++ は int を既定値としてサポートしていません
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(38,2): error C2371: 'w': 再定義されています。異なる基本型です。
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(35): message : 'w' の宣言を確認してください
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(38,4): error C2146: 構文エラー: ';' が、識別子 'lpszClassName' の前に必要です。
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(39,3): error C3927: '->': 後続の戻り値の型は、関数以外の宣言子の後に許可されていません
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(39,3): error C3484: 構文エラー: 戻り値の型の前に '->' が必要です
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(39,14): error C3613: '->' の後に戻り型が指定されていません ('int' と見なされます)
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(39,14): error C4430: 型指定子がありません - int と仮定しました。メモ: C++ は int を既定値としてサポートしていません
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(39,2): error C2371: 'w': 再定義されています。異なる基本型です。
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(35): message : 'w' の宣言を確認してください
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(39,4): error C2146: 構文エラー: ';' が、識別子 'hInstance' の前に必要です。
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(41,20): error C4430: 型指定子がありません - int と仮定しました。メモ: C++ は int を既定値としてサポートしていません
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(41,2): error C2365: 'RegisterClassExW': 再定義; 以前の定義は '関数' でした。
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.18362.0\um\winuser.h(4362): message : 'RegisterClassExW' の宣言を確認してください
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(45,51): error C4430: 型指定子がありません - int と仮定しました。メモ: C++ は int を既定値としてサポートしていません
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(45,2): error C2365: 'AdjustWindowRect': 再定義; 以前の定義は '関数' でした。
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.18362.0\um\winuser.h(8984): message : 'AdjustWindowRect' の宣言を確認してください
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(47,1): error C3861: '_T': 識別子が見つかりませんでした
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(59,26): error C4430: 型指定子がありません - int と仮定しました。メモ: C++ は int を既定値としてサポートしていません
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(59,2): error C2365: 'ShowWindow': 再定義; 以前の定義は '関数' でした。
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.18362.0\um\winuser.h(4511): message : 'ShowWindow' の宣言を確認してください
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(63,2): error C2059: 構文エラー: 'while'
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(63,15): error C2143: 構文エラー: ';' が '{' の前にありません。
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(63,15): error C2447: '{': 対応する関数ヘッダーがありません (旧形式の仮引数リスト?)
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(73,46): error C4430: 型指定子がありません - int と仮定しました。メモ: C++ は int を既定値としてサポートしていません
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(73,2): error C2365: 'UnregisterClassW': 再定義; 以前の定義は '関数' でした。
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.18362.0\um\winuser.h(4310): message : 'UnregisterClassW' の宣言を確認してください
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(74,2): error C2059: 構文エラー: 'return'
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(75,1): error C2059: 構文エラー: '}'
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(75,1): error C2143: 構文エラー: ';' が '}' の前にありません。

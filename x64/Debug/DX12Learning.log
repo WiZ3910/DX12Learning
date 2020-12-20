@@ -1,0 +1,5 @@
+﻿  main.cpp
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(241,50): warning C4267: '=': 'size_t' から 'UINT16' に変換しました。データが失われているかもしれません。
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(244,43): warning C4267: '=': 'size_t' から 'UINT16' に変換しました。データが失われているかもしれません。
+C:\Users\mikut\source\repos\DX12Learning\DX12Learning\main.cpp(267,2): warning C4267: '引数': 'size_t' から 'UINT' に変換しました。データが失われているかもしれません。
+  DX12Learning.vcxproj -> C:\Users\mikut\source\repos\DX12Learning\x64\Debug\DX12Learning.exe
