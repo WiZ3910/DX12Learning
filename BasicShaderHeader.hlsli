@@ -4,5 +4,16 @@ struct Output {
 	float2 uv : TEXCOORD; //uv値
 };
 
+//struct Matrix {
+//	matrix mat;
+//};
+//ConstantBuffer<Matrix> m : register(b0);
+
 Texture2D<float4> tex : register(t0);
 SamplerState smp : register(s0);
+
+//定数バッファー
+cbuffer cbuff0 : register(b0) {
+	matrix mat; //変換行列
+};
+
