@@ -369,6 +369,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
 	};
 
+
+
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC gpipeline = {};
 	gpipeline.pRootSignature = nullptr;
 	gpipeline.VS.pShaderBytecode = _vsBlob->GetBufferPointer();
