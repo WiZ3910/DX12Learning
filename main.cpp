@@ -23,6 +23,7 @@
 #pragma comment(lib,"d3dcompiler.lib")
 
 using namespace DirectX;
+using namespace std;
 
 ///@brief コンソール画面にフォーマット付き文字列を表示
 ///@param format フォーマット(%dとか%fとかの)
@@ -73,17 +74,29 @@ std::wstring GetWideStringFromString(const std::string& str)
 	return wstr;
 }
 
-std::string GetTexturePathFromModelAndTexPath(
-	const std::string& modelPath,
-	const char* texPath)
-{
-	int pathIndex1 = modelPath.rfind("/");
-	int pathIndex2 = modelPath.rfind("\\");
+//std::string GetTexturePathFromModelAndTexPath(
+//	const std::string& modelPath,
+//	const char* texPath)
+//{
+//	int pathIndex1 = modelPath.rfind("/");
+//	int pathIndex2 = modelPath.rfind("\\");
+//	auto pathIndex = max(pathIndex1, pathIndex2);
+//	auto folderPath = modelPath.substr(0, pathIndex);
+//	return folderPath + texPath;
+//}
+
+std::string GetTexturePathFromModelAndTexPath(const std::string& modelPath, const char* texPath) {
+	//ファイルのフォルダ区切りは\と/の二種類が使用される可能性があり
+	//ともかく末尾の\か/を得られればいいので、双方のrfindをとり比較する
+	//int型に代入しているのは見つからなかった場合はrfindがepos(-1→0xffffffff)を返すため
+	int pathIndex1 = modelPath.rfind('/');
+	int pathIndex2 = modelPath.rfind('\\');
 	auto pathIndex = max(pathIndex1, pathIndex2);
-	auto folderPath = modelPath.substr(0, pathIndex);
+	auto folderPath = modelPath.substr(0, pathIndex + 1);
+	cout << "pathIndex1 : " << pathIndex1 << "pathIndex2 : " << pathIndex2 << endl;
+	cout << "modelPath :" << modelPath << " result: " << folderPath + texPath << endl;
 	return folderPath + texPath;
 }
-
 const unsigned int window_width = 1280;
 const unsigned int window_height = 720;
 
@@ -103,6 +116,7 @@ void EnableDebugLayer() {
 
 ID3D12Resource* LoadTextureFromFile(std::string& texPath)
 {
+	std::cout << "テクスチャを読み込みます Path : " << texPath << std::endl;
 	//WICテクスチャのロード
 	TexMetadata metadata = {};
 	ScratchImage scratchImg = {};
@@ -114,6 +128,7 @@ ID3D12Resource* LoadTextureFromFile(std::string& texPath)
 	);
 	if(FAILED(result))
 	{
+		std::cout << "画像ファイル読み込みに失敗しました" << endl;
 		return nullptr;
 	}
 	auto img = scratchImg.GetImage(0, 0, 0);
@@ -149,14 +164,58 @@ ID3D12Resource* LoadTextureFromFile(std::string& texPath)
 	);
 	if(FAILED(result))
 	{
+		std::cout << "バッファーの作成に失敗しました" << endl;
 		return nullptr;
 	}
 	result = texbuff->WriteToSubresource(0, nullptr, img->pixels, img->rowPitch, img->slicePitch);
 	if(FAILED(result))
 	{
+		std::cout << "サブリソース書き込みに失敗しました" << endl;
 		return nullptr;
 	}
 	return texbuff;
+}
+
+ID3D12Resource* CreateWhiteTexture()
+{
+	D3D12_HEAP_PROPERTIES texHeapProp = {};
+	texHeapProp.Type = D3D12_HEAP_TYPE_CUSTOM;
+	texHeapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
+	texHeapProp.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
+	texHeapProp.CreationNodeMask = 0;
+	texHeapProp.VisibleNodeMask = 0;
+
+	D3D12_RESOURCE_DESC resDesc = {};
+	resDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	resDesc.Width = 4;
+	resDesc.Height = 4;
+	resDesc.DepthOrArraySize = 1;
+	resDesc.SampleDesc.Count = 1;
+	resDesc.SampleDesc.Quality = 0;
+	resDesc.MipLevels = 1;
+	resDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	resDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	resDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+	ID3D12Resource* whiteBuff = nullptr;
+	auto result = _dev->CreateCommittedResource(
+		&texHeapProp,
+		D3D12_HEAP_FLAG_NONE,
+		&resDesc,
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+		nullptr,
+		IID_PPV_ARGS(&whiteBuff)
+	);
+	if(FAILED(result))
+	{
+		return  nullptr;
+	}
+	std::vector<unsigned char> data(4 * 4 * 4, 0xff);
+	std::fill(data.begin(), data.end(), 0xff); //白埋め
+
+	//データ転送
+	result = whiteBuff->WriteToSubresource(0, nullptr, data.data(), 4 * 4, data.size());
+	return whiteBuff;
 }
 
 #ifdef _DEBUG
@@ -170,7 +229,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//(書かなくても動くときもあります)
 	auto result = CoInitializeEx(0, COINIT_MULTITHREADED);
 
-	DebugOutputFormatString("Show window test.");
+	//DebugOutputFormatString("Show window test.");
 	HINSTANCE hInst = GetModuleHandle(nullptr);
 	//ウィンドウクラス生成＆登録
 	WNDCLASSEX w = {};
@@ -355,7 +414,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	char signature[3];
 	PMDHeader pmdheader = {};
 	FILE* fp;
-	std::string strModelPath = "C:\\DX12Learning\\初音ミクVer2.pmd";
+	std::string rukaPath = "C:\\ダウンロード\\MikuMikuDance_v932x64\\UserFile\\Model\\巡音ルカ.pmd";
+	std::string mikuPath = "C:\\ダウンロード\\MikuMikuDance_v932x64\\UserFile\\Model\\初音ミク.pmd";
+	std::string strModelPath = mikuPath;
 	auto err = fopen_s(&fp, strModelPath.c_str(), "rb");
 	if (fp == nullptr) {
 		char strerr[256];
@@ -537,7 +598,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	matCBVDesc.SizeInBytes = materialBuffSize; //マテリアルの２５６アラインメントサイズ
 
 
-
 	//8.4.4 テクスチャを読んでいく
 	std::vector<ID3D12Resource*> textureResources(pmdMaterials.size());
 	for (int i = 0; i < pmdMaterials.size(); ++i)
@@ -545,6 +605,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		if (strlen(pmdMaterials[i].texFilePath) == 0)
 		{
 			textureResources[i] = nullptr;
+			continue;
 		}
 		//モデルとテクスチャパスからアプリケーションからのテクスチャパスを得る
 		auto texFilePath = GetTexturePathFromModelAndTexPath(
@@ -566,30 +627,40 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MipLevels = 1; //ミップマップは使用しないので１
+
 	//
 	//ディスクリプタヒープの先頭を記録
 	auto matDescHeapH = materialDescHeap->GetCPUDescriptorHandleForHeapStart();
-	auto inc = _dev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	auto incSize = _dev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	auto whiteTex = CreateWhiteTexture();
 	for(int i = 0; i < materialNum; ++i)
 	{
 		//マテリアル用定数バッファービュー
 		_dev->CreateConstantBufferView(&matCBVDesc, matDescHeapH);
-		
-		matDescHeapH.ptr += inc;
+		matDescHeapH.ptr += incSize;
 		matCBVDesc.BufferLocation += materialBuffSize;
+
 		
 		//シェーダーリソースビュー
-		if(textureResources[i] != nullptr)
+		if(textureResources[i] == nullptr)
+		{
+			srvDesc.Format = whiteTex->GetDesc().Format;
+			_dev->CreateShaderResourceView(
+				whiteTex, &srvDesc, matDescHeapH
+			);
+			std::cout << "white texture を使用" << std::endl;
+		} else
 		{
 			srvDesc.Format = textureResources[i]->GetDesc().Format;
+			_dev->CreateShaderResourceView(
+				textureResources[i],
+				&srvDesc,
+				matDescHeapH
+			);
+			std::cout << "正常にTextureを読み込み" << std::endl;
 		}
-		_dev->CreateShaderResourceView(
-			textureResources[i],
-			&srvDesc,
-			matDescHeapH
-		);
-		matDescHeapH.ptr += inc;
-	} //これで必要なビューはつくられた
+		matDescHeapH.ptr += incSize;
+	}
 	fclose(fp);
 
 	
@@ -723,7 +794,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	descTblRange[1].BaseShaderRegister = 1; //1番スロットから
 	descTblRange[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	descTblRange[2].NumDescriptors = 1;
+	descTblRange[2].NumDescriptors = 4;
 	descTblRange[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	descTblRange[2].BaseShaderRegister = 0;
 	descTblRange[2].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -738,7 +809,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	rootparam[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootparam[1].DescriptorTable.pDescriptorRanges = &descTblRange[1]; //ディスクリプタレンジのアドレス
 	rootparam[1].DescriptorTable.NumDescriptorRanges = 2;
-	rootparam[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	rootparam[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	rootSignatureDesc.pParameters = &rootparam[0];//ルートパラメータの先頭アドレス
 	rootSignatureDesc.NumParameters = 2;//ルートパラメータ数
@@ -840,7 +911,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		worldMat = XMMatrixRotationY(angle);
 		mapMatrix->world = worldMat;
 		mapMatrix->viewproj = viewMat * projMat;
-		angle += 0.005f;
+		//angle += 0.005f;
 
 		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
 			TranslateMessage(&msg);
