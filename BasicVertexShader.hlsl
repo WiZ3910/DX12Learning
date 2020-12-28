@@ -13,6 +13,6 @@ VertexOutput BasicVS(float4 pos : POSITION, float4 normal : NORMAL, float2 uv : 
 	output.normal = mul(world, normal);//法線にもワールド変換を行う
 	output.vnormal = mul(view, output.normal);
 	output.uv = uv;
-
+	output.ray = normalize(pos.xyz - eye); //視線ベクトル
 	return output;
 }

@@ -12,6 +12,7 @@
 
 #include "MMDData.h"
 #include <filesystem>
+#include <map>
 
 #ifdef _DEBUG
 #include<iostream>
@@ -113,18 +114,30 @@ void EnableDebugLayer() {
 	debugLayer->Release();
 }
 
+using LoadLambda_t = function<HRESULT(const wstring & path, TexMetadata*, ScratchImage&)>;
+map<std::string, LoadLambda_t> loadLambdaTable;
+
+///ファイル名から拡張子を取得する(ワイド文字版)
+///@param path 対象のパス文字列
+///@return 拡張子
+std::string
+GetExtension(const std::string& path) {
+	auto idx = path.rfind(L'.');
+	return path.substr(idx + 1, path.length() - idx - 1);
+}
+
+
 ID3D12Resource* LoadTextureFromFile(std::string& texPath)
 {
 std::cout << "テクスチャを読み込みます Path : " << texPath << std::endl;
 	//WICテクスチャのロード
 	TexMetadata metadata = {};
 	ScratchImage scratchImg = {};
-	auto result = LoadFromWICFile(
-		GetWideStringFromString(texPath).c_str(),
-		WIC_FLAGS_NONE,
+	auto wtexpath = GetWideStringFromString(texPath);//テクスチャのファイルパス
+	auto ext = GetExtension(texPath);//拡張子を取得
+	auto result = loadLambdaTable[ext](wtexpath,
 		&metadata,
-		scratchImg
-	);
+		scratchImg);
 	if(FAILED(result))
 	{
 		std::cout << "画像ファイル読み込みに失敗しました" << std::endl;
@@ -254,14 +267,6 @@ ID3D12Resource* CreateBlackTexture() {
 	return blackBuff;
 }
 
-///ファイル名から拡張子を取得する(ワイド文字版)
-///@param path 対象のパス文字列
-///@return 拡張子
-std::string
-GetExtension(const std::string& path) {
-	auto idx = path.rfind(L'.');
-	return path.substr(idx + 1, path.length() - idx - 1);
-}
 
 
 ///テクスチャのパスをセパレータ文字で分離する
@@ -275,7 +280,6 @@ std::pair<std::string, std::string> SplitFileName(const std::string& path, const
 	ret.second = path.substr(idx + 1, path.length() - idx - 1);
 	return ret;
 }
-
 #ifdef _DEBUG
 int main() {
 #else
@@ -381,6 +385,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		nullptr,
 		(IDXGISwapChain1**)&_swapchain);
 
+	//テクスチャ読み込み用の関数マップを用意しておく
+	loadLambdaTable["sph"] = 
+	loadLambdaTable["spa"] = 
+	loadLambdaTable["bmp"] = 
+	loadLambdaTable["png"] = 
+	loadLambdaTable["jpg"] = 
+		[](const wstring& path, TexMetadata* meta, ScratchImage& img)->HRESULT {
+		return LoadFromWICFile(path.c_str(), WIC_FLAGS_NONE, meta, img);
+	};
+
+	loadLambdaTable["tga"] = [](const wstring& path, TexMetadata* meta, ScratchImage& img)->HRESULT {
+		return LoadFromTGAFile(path.c_str(), meta, img);
+	};
+
+	loadLambdaTable["dds"] = [](const wstring& path, TexMetadata* meta, ScratchImage& img)->HRESULT {
+		return LoadFromDDSFile(path.c_str(), DDS_FLAGS_NONE, meta, img);
+	};
+
+
 	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
 	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;//レンダーターゲットビューなので当然RTV
 	heapDesc.NodeMask = 0;
@@ -475,7 +498,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	std::string rukaPath = "C:\\ダウンロード\\MikuMikuDance_v932x64\\UserFile\\Model\\巡音ルカ.pmd";
 	std::string mikuPath = "C:\\ダウンロード\\MikuMikuDance_v932x64\\UserFile\\Model\\初音ミクmetal.pmd";
 	std::string sourMikuPath = "C:\\ダウンロード\\Sour式初音ミクVer.1.02\\White.pmx"; //PMXはだめだた...
-	std::string strModelPath = rukaPath;
+	std::string strModelPath = mikuPath;
 	auto err = fopen_s(&fp, strModelPath.c_str(), "rb");
 	if (fp == nullptr) {
 		char strerr[256];
@@ -980,6 +1003,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		XMMATRIX world;
 		XMMATRIX view;
 		XMMATRIX proj;
+		XMFLOAT3 eye; //視線座標
 	};
 
 	//定数バッファ作成
@@ -1009,6 +1033,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	mapMatrix->world = worldMat;
 	mapMatrix->view = viewMat;
 	mapMatrix->proj = projMat;
+	mapMatrix->eye = eye;
 
 	ID3D12DescriptorHeap* basicDescHeap = nullptr;
 	D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc = {};
@@ -1026,7 +1051,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//定数バッファビューの作成
 	_dev->CreateConstantBufferView(&cbvDesc, basicHeapHandle);
 
-	//constBuff->Unmap(0, nullptr);
+	constBuff->Unmap(0, nullptr);
 
 
 	MSG msg = {};
