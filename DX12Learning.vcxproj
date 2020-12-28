@@ -186,6 +186,18 @@
   <ItemGroup>
     <None Include="BasicShaderHeader.hlsli" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\..\..\..\ダウンロード\MikuMikuDance_v932x64\Data\toon01.bmp" />
+    <Image Include="..\..\..\..\..\..\ダウンロード\MikuMikuDance_v932x64\Data\toon02.bmp" />
+    <Image Include="..\..\..\..\..\..\ダウンロード\MikuMikuDance_v932x64\Data\toon03.bmp" />
+    <Image Include="..\..\..\..\..\..\ダウンロード\MikuMikuDance_v932x64\Data\toon04.bmp" />
+    <Image Include="..\..\..\..\..\..\ダウンロード\MikuMikuDance_v932x64\Data\toon05.bmp" />
+    <Image Include="..\..\..\..\..\..\ダウンロード\MikuMikuDance_v932x64\Data\toon06.bmp" />
+    <Image Include="..\..\..\..\..\..\ダウンロード\MikuMikuDance_v932x64\Data\toon07.bmp" />
+    <Image Include="..\..\..\..\..\..\ダウンロード\MikuMikuDance_v932x64\Data\toon08.bmp" />
+    <Image Include="..\..\..\..\..\..\ダウンロード\MikuMikuDance_v932x64\Data\toon09.bmp" />
+    <Image Include="..\..\..\..\..\..\ダウンロード\MikuMikuDance_v932x64\Data\toon10.bmp" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

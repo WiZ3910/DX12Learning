@@ -1,8 +1,4 @@
 #include"BasicShaderHeader.hlsli"
-Texture2D<float4> tex:register(t0);//0番スロットに設定されたテクスチャ
-SamplerState smp:register(s0);//0番スロットに設定されたサンプラ
-
-
 
 VertexOutput BasicVS(float4 pos : POSITION, float4 normal : NORMAL, float2 uv : TEXCOORD) {
 	VertexOutput output;//ピクセルシェーダへ渡す値

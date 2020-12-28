@@ -22,6 +22,3 @@ cbuffer Material : register(b1) {
 	float4 specular;
 	float3 ambient;
 }
-
-Texture2D<float4> sph : register(t1);
-Texture2D<float4> spa : register(t2);

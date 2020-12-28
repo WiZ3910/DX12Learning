@@ -84,7 +84,6 @@ std::wstring GetWideStringFromString(const std::string& str)
 //	auto folderPath = modelPath.substr(0, pathIndex);
 //	return folderPath + texPath;
 //}
-
 std::string GetTexturePathFromModelAndTexPath(const std::string& modelPath, const char* texPath) {
 	//ファイルのフォルダ区切りは\と/の二種類が使用される可能性があり
 	//ともかく末尾の\か/を得られればいいので、双方のrfindをとり比較する
@@ -127,9 +126,19 @@ GetExtension(const std::string& path) {
 }
 
 
-ID3D12Resource* LoadTextureFromFile(std::string& texPath)
-{
-std::cout << "テクスチャを読み込みます Path : " << texPath << std::endl;
+//ファイル名パスとリソースのマップテーブル
+map<string, ID3D12Resource*> _resourceTable;
+
+ID3D12Resource*
+LoadTextureFromFile(std::string& texPath) {
+	auto it = _resourceTable.find(texPath);
+	if (it != _resourceTable.end()) {
+		//テーブルに内にあったらロードするのではなくマップ内の
+		//リソースを返す
+		return _resourceTable[texPath];
+	}
+
+
 	//WICテクスチャのロード
 	TexMetadata metadata = {};
 	ScratchImage scratchImg = {};
@@ -138,56 +147,58 @@ std::cout << "テクスチャを読み込みます Path : " << texPath << std::e
 	auto result = loadLambdaTable[ext](wtexpath,
 		&metadata,
 		scratchImg);
-	if(FAILED(result))
-	{
-		std::cout << "画像ファイル読み込みに失敗しました" << std::endl;
+	if (FAILED(result)) {
+		cout << "テクスチャ" << texPath << "の読み込みに失敗しました" << endl;
 		return nullptr;
 	}
-	auto img = scratchImg.GetImage(0, 0, 0);
+	auto img = scratchImg.GetImage(0, 0, 0);//生データ抽出
+
 	//WriteToSubresourceで転送する用のヒープ設定
 	D3D12_HEAP_PROPERTIES texHeapProp = {};
-	texHeapProp.Type = D3D12_HEAP_TYPE_CUSTOM;
-	texHeapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
-	texHeapProp.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
-	texHeapProp.CreationNodeMask = 0;
-	texHeapProp.VisibleNodeMask = 0;
+	texHeapProp.Type = D3D12_HEAP_TYPE_CUSTOM;//特殊な設定なのでdefaultでもuploadでもなく
+	texHeapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;//ライトバックで
+	texHeapProp.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;//転送がL0つまりCPU側から直で
+	texHeapProp.CreationNodeMask = 0;//単一アダプタのため0
+	texHeapProp.VisibleNodeMask = 0;//単一アダプタのため0
 
 	D3D12_RESOURCE_DESC resDesc = {};
 	resDesc.Format = metadata.format;
-	resDesc.Width = metadata.width;
-	resDesc.Height = metadata.height;
-	resDesc.DepthOrArraySize = metadata.arraySize;
-	resDesc.SampleDesc.Count = 1;
-	resDesc.SampleDesc.Quality = 0; //クオリティは最低
-	resDesc.MipLevels = metadata.mipLevels;
-	resDesc.Dimension = static_cast<D3D12_RESOURCE_DIMENSION>(metadata.dimension); 
-	resDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN; //レイアウトは決定しない
-	resDesc.Flags = D3D12_RESOURCE_FLAG_NONE; //特にフラグなし
+	resDesc.Width = static_cast<UINT>(metadata.width);//幅
+	resDesc.Height = static_cast<UINT>(metadata.height);//高さ
+	resDesc.DepthOrArraySize = static_cast<UINT16>(metadata.arraySize);
+	resDesc.SampleDesc.Count = 1;//通常テクスチャなのでアンチェリしない
+	resDesc.SampleDesc.Quality = 0;//
+	resDesc.MipLevels = static_cast<UINT16>(metadata.mipLevels);//ミップマップしないのでミップ数は１つ
+	resDesc.Dimension = static_cast<D3D12_RESOURCE_DIMENSION>(metadata.dimension);
+	resDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;//レイアウトについては決定しない
+	resDesc.Flags = D3D12_RESOURCE_FLAG_NONE;//とくにフラグなし
 
-	//バッファー作成
 	ID3D12Resource* texbuff = nullptr;
 	result = _dev->CreateCommittedResource(
 		&texHeapProp,
-		D3D12_HEAP_FLAG_NONE,
+		D3D12_HEAP_FLAG_NONE,//特に指定なし
 		&resDesc,
-		D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
 		nullptr,
 		IID_PPV_ARGS(&texbuff)
 	);
-	if(FAILED(result))
-	{
-		std::cout << "バッファーの作成に失敗しました" <<std::endl;
+
+	if (FAILED(result)) {
 		return nullptr;
 	}
-	result = texbuff->WriteToSubresource(0, nullptr, img->pixels, img->rowPitch, img->slicePitch);
-	if(FAILED(result))
-	{
-		std::cout << "サブリソース書き込みに失敗しました" <<std::endl;
+	result = texbuff->WriteToSubresource(0,
+		nullptr,//全領域へコピー
+		img->pixels,//元データアドレス
+		static_cast<UINT>(img->rowPitch),//1ラインサイズ
+		static_cast<UINT>(img->slicePitch)//全サイズ
+	);
+	if (FAILED(result)) {
 		return nullptr;
 	}
+
+	_resourceTable[texPath] = texbuff;
 	return texbuff;
 }
-
 ID3D12Resource* CreateWhiteTexture() {
 	D3D12_HEAP_PROPERTIES texHeapProp = {};
 	texHeapProp.Type = D3D12_HEAP_TYPE_CUSTOM;//特殊な設定なのでdefaultでもuploadでもなく
@@ -265,6 +276,55 @@ ID3D12Resource* CreateBlackTexture() {
 
 	result = blackBuff->WriteToSubresource(0, nullptr, data.data(), 4 * 4, static_cast<UINT>(data.size()));
 	return blackBuff;
+}
+//トゥーンのためのグラデーションテクスチャ
+ID3D12Resource*
+CreateGrayGradationTexture() {
+	D3D12_RESOURCE_DESC resDesc = {};
+	resDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	resDesc.Width = 4;//幅
+	resDesc.Height = 256;//高さ
+	resDesc.DepthOrArraySize = 1;
+	resDesc.SampleDesc.Count = 1;
+	resDesc.SampleDesc.Quality = 0;//
+	resDesc.MipLevels = 1;//
+	resDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	resDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;//レイアウトについては決定しない
+	resDesc.Flags = D3D12_RESOURCE_FLAG_NONE;//とくにフラグなし
+
+	D3D12_HEAP_PROPERTIES texHeapProp = {};
+	texHeapProp.Type = D3D12_HEAP_TYPE_CUSTOM;//特殊な設定なのでdefaultでもuploadでもなく
+	texHeapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;//ライトバックで
+	texHeapProp.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;//転送がL0つまりCPU側から直で
+	texHeapProp.CreationNodeMask = 0;//単一アダプタのため0
+	texHeapProp.VisibleNodeMask = 0;//単一アダプタのため0
+
+	ID3D12Resource* gradBuff = nullptr;
+	auto result = _dev->CreateCommittedResource(
+		&texHeapProp,
+		D3D12_HEAP_FLAG_NONE,//特に指定なし
+		&resDesc,
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+		nullptr,
+		IID_PPV_ARGS(&gradBuff)
+	);
+	if (FAILED(result)) {
+		return nullptr;
+	}
+
+	//上が白くて下が黒いテクスチャデータを作成
+	std::vector<unsigned int> data(4 * 256);
+	auto it = data.begin();
+	unsigned int c = 0xff;
+	for (; it != data.end(); it += 4) {
+		auto col = (0xff << 24) | RGB(c, c, c);//RGBAが逆並びしているためRGBマクロと0xff<<24を用いて表す。
+		//auto col = (0xff << 24) | (c<<16)|(c<<8)|c;//これでもOK
+		std::fill(it, it + 4, col);
+		--c;
+	}
+
+	result = gradBuff->WriteToSubresource(0, nullptr, data.data(), 4 * sizeof(unsigned int), sizeof(unsigned int) * static_cast<UINT>(data.size()));
+	return gradBuff;
 }
 
 
@@ -671,7 +731,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	D3D12_DESCRIPTOR_HEAP_DESC materialDescHeapDesc = {};
 	materialDescHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	materialDescHeapDesc.NodeMask = 0;
-	materialDescHeapDesc.NumDescriptors = materialNum * 4; //マテリアル数 x(2->3(sphere map)->4(sphere alpha map))
+	materialDescHeapDesc.NumDescriptors = materialNum * 5; //マテリアル数 x(2->3(sphere map)->4(sphere alpha map)->5(toon map))
 	materialDescHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	result = _dev->CreateDescriptorHeap(&materialDescHeapDesc, IID_PPV_ARGS(&materialDescHeap));
 	//ビューの作成
@@ -684,13 +744,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	std::vector<ID3D12Resource*> textureResources(materialNum);
 	std::vector<ID3D12Resource*> sphResources(materialNum);
 	std::vector<ID3D12Resource*> spaResources(materialNum);
+	std::vector<ID3D12Resource*> toonResources(materialNum);
 	for (int i = 0; i < pmdMaterials.size(); ++i) {
 		//トゥーンリソースの読み込み
-		//string toonFilePath = "toon/";
-		//char toonFileName[16];
-		//sprintf_s(toonFileName, 16, "toon%02d.bmp", pmdMaterials[i].toonIdx + 1);
-		//toonFilePath += toonFileName;
-		//toonResources[i] = LoadTextureFromFile(toonFilePath);
+		string toonFilePath = "toon/";
+		char toonFileName[16];
+		sprintf_s(toonFileName, 16, "toon%02d.bmp", pmdMaterials[i].toonIdx + 1);
+		toonFilePath += toonFileName;
+		toonResources[i] = LoadTextureFromFile(toonFilePath);
+		//cout << "トゥーンリソースを読み込みました" << endl;
 
 		if (strlen(pmdMaterials[i].texFilePath) == 0) {
 			textureResources[i] = nullptr;
@@ -770,6 +832,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	auto incSize = _dev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	auto whiteTex = CreateWhiteTexture();
 	auto blackTex = CreateBlackTexture();
+	auto gradTex = CreateGrayGradationTexture();
 	for (size_t i = 0; i < materialNum; ++i) {
 		//マテリアル固定バッファビュー
 		_dev->CreateConstantBufferView(&matCBVDesc, matDescHeapH);
@@ -802,6 +865,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		else {
 			srvDesc.Format = spaResources[i]->GetDesc().Format;
 			_dev->CreateShaderResourceView(spaResources[i], &srvDesc, matDescHeapH);
+		}
+		matDescHeapH.ptr += incSize;
+
+		if(toonResources[i] == nullptr)
+		{
+			srvDesc.Format = gradTex->GetDesc().Format;
+			_dev->CreateShaderResourceView(gradTex, &srvDesc, matDescHeapH);
+		} else
+		{
+			cout << "トゥーンテクスチャを使用します" << endl;
+			srvDesc.Format = toonResources[i]->GetDesc().Format;
+			_dev->CreateShaderResourceView(toonResources[i], &srvDesc, matDescHeapH);
 		}
 		matDescHeapH.ptr += incSize;
 
@@ -940,7 +1015,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	descTblRange[1].BaseShaderRegister = 1; //1番スロットから
 	descTblRange[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	descTblRange[2].NumDescriptors = 3;
+	descTblRange[2].NumDescriptors = 4;
 	descTblRange[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	descTblRange[2].BaseShaderRegister = 0;
 	descTblRange[2].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -960,19 +1035,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	rootSignatureDesc.pParameters = &rootparam[0];//ルートパラメータの先頭アドレス
 	rootSignatureDesc.NumParameters = 2;//ルートパラメータ数
 
-	D3D12_STATIC_SAMPLER_DESC samplerDesc = {};
-	samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;//横繰り返し
-	samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;//縦繰り返し
-	samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;//奥行繰り返し
-	samplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;//ボーダーの時は黒
-	samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;//補間しない(ニアレストネイバー)
-	samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;//ミップマップ最大値
-	samplerDesc.MinLOD = 0.0f;//ミップマップ最小値
-	samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;//オーバーサンプリングの際リサンプリングしない？
-	samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;//ピクセルシェーダからのみ可視
+	D3D12_STATIC_SAMPLER_DESC samplerDesc[2] = {};
+	samplerDesc[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;//横繰り返し
+	samplerDesc[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;//縦繰り返し
+	samplerDesc[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;//奥行繰り返し
+	samplerDesc[0].BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;//ボーダーの時は黒
+	samplerDesc[0].Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;//補間しない(ニアレストネイバー)
+	samplerDesc[0].MaxLOD = D3D12_FLOAT32_MAX;//ミップマップ最大値
+	samplerDesc[0].MinLOD = 0.0f;//ミップマップ最小値
+	samplerDesc[0].ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;//オーバーサンプリングの際リサンプリングしない？
+	samplerDesc[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;//ピクセルシェーダからのみ可視
 
-	rootSignatureDesc.pStaticSamplers = &samplerDesc;
-	rootSignatureDesc.NumStaticSamplers = 1;
+	samplerDesc[1] = samplerDesc[0]; //変更点以外からコピー
+	samplerDesc[1].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	samplerDesc[1].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	samplerDesc[1].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	samplerDesc[1].ShaderRegister = 1;
+
+	rootSignatureDesc.pStaticSamplers = samplerDesc;
+	rootSignatureDesc.NumStaticSamplers = 2;
 
 	ID3DBlob* rootSigBlob = nullptr;
 	result = D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_0, &rootSigBlob, &errorBlob);
@@ -1116,7 +1197,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//_cmdList->SetGraphicsRootDescriptorTable(1, materialDescHeap->GetGPUDescriptorHandleForHeapStart());
 		auto materialH = materialDescHeap->GetGPUDescriptorHandleForHeapStart();
 		unsigned int idxOffset = 0;
-		auto cbvsrvIncSize = _dev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * 4; //スフィアマップ分を追加 => 加算スフィアマップも追加
+		auto cbvsrvIncSize = _dev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * 5; //スフィアマップ分を追加 => 加算スフィアマップも追加
 		for (auto& m : materials)
 		{
 			_cmdList->SetGraphicsRootDescriptorTable(1, materialH);
