@@ -62,9 +62,6 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="BasicType.hlsli">
-      <Filter>ソース ファイル</Filter>
-    </None>
     <None Include="BasicShaderHeader.hlsli">
       <Filter>ソース ファイル</Filter>
     </None>
